@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import base64
 import json
+import pytesseract as ocr
 from tensorflow import keras
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
@@ -17,9 +18,11 @@ class ClassifierReturn:
     def __init__(self):
         self.typedoc = None
         self.score = 00.00
-        self.exists = True
+        self.isIdentifierDocument = True
 
 def return_prediction(content):
+    imgbase64 = content["imagebase64"]
+    ocr_text = ocrTesseract(imgbase64)
     #model = load_model('document_detector.h5')
     model = load_model('document_classifier.h5')
     response = ClassifierReturn()
@@ -27,7 +30,7 @@ def return_prediction(content):
     img_height = 580
     img_width = 580
 
-    imgbase64 = content["imagebase64"]
+   
     img = Image.open(BytesIO(base64.b64decode(imgbase64)))
     img = img.resize((img_height,img_width),Image.ANTIALIAS)
 
@@ -41,6 +44,18 @@ def return_prediction(content):
     response.typedoc = class_names[np.argmax(score_predictions)]
     response.score = (100 * np.max(score_predictions))
     return json.dumps(response.__dict__)
+
+def ocrTesseract(content):
+    #Tesseract OCR via api, ou integrado
+    #Tratamento de imagem para melhor extração
+    image = Image.open(BytesIO(base64.b64decode(content)))
+    ocr.pytesseract.tesseract_cmd = r'C:\Users\USER\AppData\Local\Tesseract-OCR\tesseract.exe'
+    phrase = ocr.image_to_string(image, lang='por')
+    return phrase
+
+def cropLayout():
+    #Algoritimo de crop com layout de coordenadas predefinido
+    return True
 
 @app.route("/")
 def index():
